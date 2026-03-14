@@ -11,6 +11,11 @@ const {
 } = require("../controllers/adminController");
 const { protect, adminOnly } = require("../middleware/auth");
 
+// Health check for Admin API (No auth required)
+router.get("/", (req, res) => {
+  res.json({ message: "Admin API is running!" });
+});
+
 router.use(protect, adminOnly);
 
 router.get("/users", getUsers);

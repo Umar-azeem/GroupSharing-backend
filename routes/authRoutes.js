@@ -4,6 +4,11 @@ const { register, login, getProfile, updateProfile, changePassword } = require("
 const { protect } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 
+// Health check for Auth API
+router.get("/", (req, res) => {
+  res.json({ message: "Auth API is running!" });
+});
+
 router.post("/register", register);
 router.post("/login", login);
 router.get("/profile", protect, getProfile);

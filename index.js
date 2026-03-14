@@ -41,15 +41,17 @@ app.get("/", (req, res) => {
 
 
 // MongoDB connection
-if (!mongoose.connection.readyState) {
-  mongoose
-    .connect(process.env.MONGODB_URI)
-    .then(() => console.log("✅ MongoDB connected"))
-    .catch((err) => console.error("❌ MongoDB connection error:", err));
-}
+if (process.env.NODE_ENV !== "test") {
+  if (!mongoose.connection.readyState) {
+    mongoose
+      .connect(process.env.MONGODB_URI)
+      .then(() => console.log("✅ MongoDB connected"))
+      .catch((err) => console.error("❌ MongoDB connection error:", err));
+  }
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
