@@ -94,22 +94,26 @@ const getProfile = async (req, res) => {
 // @route PUT /api/auth/profile
 const updateProfile = async (req, res) => {
   try {
-    const { name } = req.body;
-
+    const { name, email } = req.body;
     const updateData = {};
 
     if (name) updateData.name = name;
+    if (email) updateData.email = email;
 
     if (req.file) {
-      const result = await cloudinary.uploader.upload_stream(
-        { folder: "profiles" },
-        (error, result) => {
-          if (error) throw error;
-          imageUrl = result.secure_url;
-        },
-      );
-      const stream = result;
-      stream.end(req.file.buffer);
+      // Wrap upload_stream in a Promise so we can await it
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "profiles" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req.file.buffer); // pipe the buffer into the stream
+      });
+
+      updateData.profileImage = uploadResult.secure_url;
     }
 
     const user = await User.findByIdAndUpdate(req.user._id, updateData, {
