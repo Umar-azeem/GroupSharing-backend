@@ -20,8 +20,8 @@ router.get("/status", (req, res) => {
 router.get("/", getGroups);
 router.get("/my-groups", protect, getMyGroups);
 router.get("/:id", getGroup);
-router.post("/", protect, upload.single("groupImage"), createGroup);
-router.put("/:id", protect, upload.single("groupImage"), updateGroup);
+router.post("/", protect, upload.single("imageUrl"), createGroup);
+router.put("/:id", protect, upload.single("imageUrl"), updateGroup);
 router.delete("/:id", protect, deleteGroup);
 router.post("/:id/like", protect, toggleLike);
 

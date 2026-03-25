@@ -14,12 +14,16 @@ const register = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: "Email already registered" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
     }
 
     const user = await User.create({ name, email, password });
@@ -49,12 +53,16 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: "Email and password required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email and password required" });
     }
 
     const user = await User.findOne({ email }).select("+password");
     if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ success: false, message: "Invalid email or password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
     }
 
     const token = generateToken(user._id);
@@ -94,12 +102,12 @@ const updateProfile = async (req, res) => {
 
     if (req.file) {
       const result = await cloudinary.uploader.upload_stream(
-  { folder: "profiles" },
-  (error, result) => {
-    if (error) throw error;
-    updateData.profileImage = result.secure_url;
-  }
-);
+        { folder: "profiles" },
+        (error, result) => {
+          if (error) throw error;
+          imageUrl = result.secure_url;
+        },
+      );
       const stream = result;
       stream.end(req.file.buffer);
     }
@@ -110,7 +118,6 @@ const updateProfile = async (req, res) => {
     });
 
     res.json({ success: true, user });
-
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -124,7 +131,9 @@ const changePassword = async (req, res) => {
     const user = await User.findById(req.user._id).select("+password");
 
     if (!(await user.comparePassword(currentPassword))) {
-      return res.status(400).json({ success: false, message: "Current password is incorrect" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Current password is incorrect" });
     }
 
     user.password = newPassword;

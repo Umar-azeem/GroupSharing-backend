@@ -13,7 +13,7 @@ const groupSchema = new mongoose.Schema(
       required: [true, "Group link is required"],
       trim: true,
     },
-    groupImage: {
+    imageUrl: {
       type: String,
       default: "",
     },
@@ -57,5 +57,4 @@ const groupSchema = new mongoose.Schema(
 
 // Index for search
 groupSchema.index({ groupName: "text", description: "text", category: 1 });
-
 module.exports = mongoose.model("Group", groupSchema);
