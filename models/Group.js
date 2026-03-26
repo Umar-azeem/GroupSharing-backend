@@ -25,7 +25,7 @@ const groupSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, "Category is required"],
-      enum: ["Tech", "Business", "Gaming", "Education", "Crypto", "Entertainment", "Other"],
+      enum: ["WhatsApp", "Instagram", "LinkedIn", "Facebook", "Discord", "Slack", "Telegram", "Twitter", "Other"],
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
