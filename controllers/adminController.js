@@ -74,7 +74,17 @@ const deletePost = async (req, res) => {
 // @route GET /api/admin/posts
 const getAllPosts = async (req, res) => {
   try {
-    const posts = await Group.find()
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query = {
+        $or: [
+          { groupName: { $regex: search, $options: "i" } },
+          { category: { $regex: search, $options: "i" } },
+        ],
+      };
+    }
+    const posts = await Group.find(query)
       .populate("createdBy", "name email")
       .sort({ createdAt: -1 });
     res.json({ success: true, posts });
