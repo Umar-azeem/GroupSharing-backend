@@ -1,5 +1,7 @@
+const mongoose = require("mongoose");
 const Group = require("../models/Group");
 const cloudinary = require("../config/cloudinary");
+const { emitGroupCreated, emitGroupLiked, emitGroupViewed } = require("../socket");
 // @desc Get all groups with search, filter, pagination
 // @route GET /api/groups
 const getGroups = async (req, res) => {
@@ -79,13 +81,57 @@ const getGroup = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Group not found" });
     }
-    // Increment views
-    await Group.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
     res.json({ success: true, group });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc Increment views on group
+// @route POST /api/groups/:id/view
+const incrementView = async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const viewerId = req.viewerId || req.cookies?.viewerId;
+    
+    if (!viewerId) {
+      // Fallback to IP if cookie logic fails
+      console.warn("[View Increment] No viewerId found in request");
+    }
+
+    let updatedGroup;
+
+    // Use viewerId as the primary unique identifier for ALL visitors (guest or user)
+    // This is much more stable than IP or the user's login state
+    updatedGroup = await Group.findOneAndUpdate(
+      { _id: groupId, viewedByViewerId: { $ne: viewerId } },
+      { 
+        $inc: { views: 1 },
+        $push: { viewedByViewerId: viewerId }
+      },
+      { new: true }
+    );
+
+    if (updatedGroup) {
+      console.log(`[View Increment] NEW - Group: ${groupId}, Viewer: ${viewerId}, Count: ${updatedGroup.views}`);
+      emitGroupViewed(groupId, updatedGroup.views);
+      res.json({ success: true, views: updatedGroup.views });
+    } else {
+      const currentGroup = await Group.findById(groupId);
+      const currentViews = currentGroup ? currentGroup.views : 0;
+      console.log(`[View Increment] REPEAT - Group: ${groupId}, Viewer: ${viewerId}, Count: ${currentViews}`);
+      res.json({ success: true, views: currentViews });
+    }
+  } catch (error) {
+    console.error(`[View Increment] ERROR:`, error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
+
 
 // @desc Create group
 // @route POST /api/groups
@@ -134,6 +180,9 @@ const createGroup = async (req, res) => {
     });
 
     await group.populate("createdBy", "name profileImage");
+
+    // Emit live group creation event
+    emitGroupCreated(group);
 
     res.status(201).json({ success: true, group });
   } catch (error) {
@@ -251,6 +300,10 @@ const toggleLike = async (req, res) => {
     }
 
     await group.save();
+    
+    // Emit live like event
+    emitGroupLiked(req.params.id, group.likes.length, userId, !isLiked);
+
     res.json({ success: true, likes: group.likes.length, isLiked: !isLiked });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -278,4 +331,5 @@ module.exports = {
   deleteGroup,
   toggleLike,
   getMyGroups,
+  incrementView,
 };

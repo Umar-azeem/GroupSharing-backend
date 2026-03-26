@@ -1,13 +1,19 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
+const crypto = require("crypto");
 const path = require("path");
+const http = require("http");
+const socketManager = require("./socket");
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const io = socketManager.init(server);
+const PORT = process.env.PORT || 8000;
 
 // CORS config
 app.use(
@@ -18,9 +24,29 @@ app.use(
   })
 );
 
+// Parse cookies
+app.use(cookieParser());
 // Parse JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Viewer ID Middleware
+app.use((req, res, next) => {
+  let viewerId = req.cookies.viewerId;
+  
+  if (!viewerId) {
+    viewerId = crypto.randomUUID();
+    res.cookie("viewerId", viewerId, {
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      httpOnly: true,
+      sameSite: "lax", // Secure: false for local development
+    });
+  }
+  
+  req.viewerId = viewerId;
+  next();
+});
+
 
 // Serve uploads folder statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -46,8 +72,9 @@ if (process.env.NODE_ENV !== "test") {
       .catch((err) => console.error("❌ MongoDB connection error:", err));
   }
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`🔌 Socket.io initialized`);
   });
 }
 

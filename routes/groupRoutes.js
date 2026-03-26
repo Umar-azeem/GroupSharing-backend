@@ -8,8 +8,9 @@ const {
   deleteGroup,
   toggleLike,
   getMyGroups,
+  incrementView,
 } = require("../controllers/groupController");
-const { protect } = require("../middleware/auth");
+const { protect, getAuth } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 
 // Base route is already taken by getGroups, so we'll add a helper route
@@ -24,5 +25,7 @@ router.post("/", protect, upload.single("groupImage"), createGroup);
 router.put("/:id", protect, upload.single("groupImage"), updateGroup);
 router.delete("/:id", protect, deleteGroup);
 router.post("/:id/like", protect, toggleLike);
+router.post("/:id/view", getAuth, incrementView);
+
 
 module.exports = router;

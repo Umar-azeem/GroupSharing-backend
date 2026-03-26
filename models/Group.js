@@ -42,6 +42,23 @@ const groupSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    viewedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    viewedByIP: {
+      type: [String],
+      default: [],
+    },
+    viewedByViewerId: {
+      type: [String],
+      default: [],
+    },
+
+
+
     isVerified: {
       type: Boolean,
       default: false,
