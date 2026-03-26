@@ -3,9 +3,21 @@ const Group = require("../models/Group");
 
 // @desc Get all users
 // @route GET /api/admin/users
+// @desc Get all users (with optional search)
+// @route GET /api/admin/users
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      };
+    }
+    const users = await User.find(query).sort({ createdAt: -1 });
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -14,8 +26,20 @@ const getUsers = async (req, res) => {
 
 // @desc Delete user (and their posts)
 // @route DELETE /api/admin/user/:id
+// @desc Delete user (and their posts) - Requires admin password
+// @route DELETE /api/admin/user/:id
 const deleteUser = async (req, res) => {
   try {
+    const { adminPassword } = req.body;
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Admin password is required" });
+    }
+
+    const admin = await User.findById(req.user._id).select("+password");
+    if (!(await admin.comparePassword(adminPassword))) {
+      return res.status(401).json({ success: false, message: "Incorrect admin password" });
+    }
+
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
@@ -129,4 +153,69 @@ const verifyPost = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, deleteUser, deletePost, getAllPosts, getStats, updatePostStatus, verifyPost };
+// @desc Freeze user - Requires admin password
+// @route PUT /api/admin/user/:id/freeze
+const freezeUser = async (req, res) => {
+  try {
+    const { adminPassword } = req.body;
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Admin password is required" });
+    }
+
+    const admin = await User.findById(req.user._id).select("+password");
+    if (!(await admin.comparePassword(adminPassword))) {
+      return res.status(401).json({ success: false, message: "Incorrect admin password" });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    if (user.role === "admin") {
+      return res.status(400).json({ success: false, message: "Cannot freeze admin user" });
+    }
+    user.isFrozen = true;
+    await user.save();
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc Unfreeze user - Requires admin password
+// @route PUT /api/admin/user/:id/unfreeze
+const unfreezeUser = async (req, res) => {
+  try {
+    const { adminPassword } = req.body;
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Admin password is required" });
+    }
+
+    const admin = await User.findById(req.user._id).select("+password");
+    if (!(await admin.comparePassword(adminPassword))) {
+      return res.status(401).json({ success: false, message: "Incorrect admin password" });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    user.isFrozen = false;
+    await user.save();
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  getUsers,
+  deleteUser,
+  deletePost,
+  getAllPosts,
+  getStats,
+  updatePostStatus,
+  verifyPost,
+  freezeUser,
+  unfreezeUser,
+};

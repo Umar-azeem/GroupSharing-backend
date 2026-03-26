@@ -8,6 +8,8 @@ const {
   getStats,
   updatePostStatus,
   verifyPost,
+  freezeUser,
+  unfreezeUser,
 } = require("../controllers/adminController");
 const { protect, adminOnly } = require("../middleware/auth");
 
@@ -20,6 +22,8 @@ router.use(protect, adminOnly);
 
 router.get("/users", getUsers);
 router.delete("/user/:id", deleteUser);
+router.put("/user/:id/freeze", freezeUser);
+router.put("/user/:id/unfreeze", unfreezeUser);
 router.get("/posts", getAllPosts);
 router.delete("/post/:id", deletePost);
 router.get("/stats", getStats);

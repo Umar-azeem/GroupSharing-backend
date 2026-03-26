@@ -26,6 +26,13 @@ const protect = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: "User not found" });
     }
+
+    if (req.user.isFrozen) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been frozen by an admin. Please contact support.",
+      });
+    }
     next();
   } catch (error) {
     return res
