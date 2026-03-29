@@ -53,9 +53,18 @@ const getGroups = async (req, res) => {
       .skip(skip)
       .limit(Number(limit));
 
+    // Redact links if not authenticated (Backend Link Protection)
+    const sanitizedGroups = groups.map(group => {
+      const g = group.toObject();
+      if (!req.user) {
+        g.groupLink = ""; // Redact link for guests
+      }
+      return g;
+    });
+
     res.json({
       success: true,
-      groups,
+      groups: sanitizedGroups,
       pagination: {
         total,
         page: Number(page),
@@ -81,7 +90,13 @@ const getGroup = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Group not found" });
     }
-    res.json({ success: true, group });
+
+    const sanitizedGroup = group.toObject();
+    if (!req.user) {
+      sanitizedGroup.groupLink = ""; // Redact link for guests
+    }
+
+    res.json({ success: true, group: sanitizedGroup });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

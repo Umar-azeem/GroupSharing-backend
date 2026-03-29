@@ -18,9 +18,9 @@ router.get("/status", (req, res) => {
   res.json({ message: "Groups API is running!" });
 });
 
-router.get("/", getGroups);
+router.get("/", getAuth, getGroups);
 router.get("/my-groups", protect, getMyGroups);
-router.get("/:id", getGroup);
+router.get("/:id", getAuth, getGroup);
 router.post("/", protect, upload.single("groupImage"), createGroup);
 router.put("/:id", protect, upload.single("groupImage"), updateGroup);
 router.delete("/:id", protect, deleteGroup);
